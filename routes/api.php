@@ -49,9 +49,11 @@ Route::middleware('auth:api')->group(function () {
         [TransactionController::class, 'update']
     )->whereNumber('id');
 
-    Route::delete('/transactions/{id}',
-        [TransactionController::class, 'destroy'])
-        ->whereNumber('id');
+    Route::middleware('role:admin')->group(function () {
+        Route::delete('/transactions/{id}',
+            [TransactionController::class, 'destroy'])
+            ->whereNumber('id');
+        });
 
     // Route categories dari project sebelumnya
     Route::apiResource('categories', CategoryController::class);
