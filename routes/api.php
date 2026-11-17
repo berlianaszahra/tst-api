@@ -1,53 +1,58 @@
+
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\TransactionController;
-use App\Models\Transaction;
-use Illuminate\Support\Facades\DB; 
-use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\CategoryController;
+use App\Models\Transaction;
+use Illuminate\Support\Facades\DB;
 
+// Route publik
 Route::post('/login', [AuthController::class, 'login']);
-
-// Rute untuk Categories
-Route::apiResource('categories', CategoryController::class);
-
-Route::get('/debug/n-plus-1', function () {
-    DB::enableQueryLog();
-    foreach (Transaction::with('category')->get() as $t) {
-        $nama = $t->category?->nama;
-    }
-    return ['jumlah_query' => count(DB::getQueryLog())];
-});
-
-Route::get('/debug/transactions-query', function () {
-    DB::enableQueryLog();
-    
-    // Mengambil data transaksi dengan relasi category (Eager Loading)
-    $transactions = Transaction::with('category')->get();
-    
-    return [
-        'jumlah_query' => count(DB::getQueryLog()),
-        'queries' => DB::getQueryLog(),
-        'data' => $transactions
-    ];
-});
-
-Route::apiResource('categories', 'App\\Http\\Controllers\\CategoryController');
 
 Route::get('/ping', function () {
     return ['message' => 'API Laravel berjalan'];
 });
 
-Route::get('/transactions', [TransactionController::class, 'index']);
+// Route terlindungi JWT
+Route::middleware('auth:api')->group(function () {
 
-Route::get('/transactions/{id}', [TransactionController::class, 'show'])->whereNumber('id');
+    Route::get('/me', function () {
+    $user = auth('api')->user();
 
-Route::post('/transactions', [TransactionController::class, 'store']);
+    return response()->json([
+        'success' => true,
+        'message' => 'Profil pengguna',
+        'data' => [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'role' => $user->role,
+            ],
+        ]);
+    });
 
-Route::match(['put', 'patch'], '/transactions/{id}', [TransactionController::class, 'update'])->whereNumber('id');
+    Route::get('/transactions',
+        [TransactionController::class, 'index']);
 
-Route::delete('/transactions/{id}', [TransactionController::class, 'destroy'])->whereNumber('id');
+    Route::get('/transactions/{id}',
+        [TransactionController::class, 'show'])
+        ->whereNumber('id');
 
-Route::apiResource('transactions', TransactionController::class);
+    Route::post('/transactions',
+        [TransactionController::class, 'store']);
 
+    Route::match(
+        ['put', 'patch'],
+        '/transactions/{id}',
+        [TransactionController::class, 'update']
+    )->whereNumber('id');
+
+    Route::delete('/transactions/{id}',
+        [TransactionController::class, 'destroy'])
+        ->whereNumber('id');
+
+    // Route categories dari project sebelumnya
+    Route::apiResource('categories', CategoryController::class);
+});
