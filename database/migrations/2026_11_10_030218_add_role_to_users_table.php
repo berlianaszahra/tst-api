@@ -1,3 +1,4 @@
+
 <?php
 
 use Illuminate\Database\Migrations\Migration;
@@ -9,10 +10,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('role', 20)->default('user')->after('password');
+            $table->string('role', 20)
+                ->default('user')
+                ->after('password');
         });
     }
-    
+
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
